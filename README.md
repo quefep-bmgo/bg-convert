@@ -6,8 +6,9 @@ The tool reads a Minecraft world, maps the blocks to the legacy IDs Blockman GO
 uses, writes BG region files, and builds the folder, checksum file, and zip that
 the game loads. It also reads a BG map and writes a Minecraft Java 26.3 world.
 
-Other Minecraft target versions are not ready yet. The plan is in issue #3.
-The map package layout is in [docs/map-layout.md](docs/map-layout.md).
+Target versions from 1.8.8 to 26.3 work through Chunker. The map package layout
+is in [docs/map-layout.md](docs/map-layout.md) and the version notes are in
+[docs/version-support.md](docs/version-support.md).
 
 ## What works
 
@@ -16,13 +17,14 @@ The map package layout is in [docs/map-layout.md](docs/map-layout.md).
 - horizontal and vertical region shifts
 - BG package creation, checksums, and zip output
 - BG to Minecraft 26.3
+- BG to Minecraft 1.8.8 through 26.2 with Chunker
 - adb install into an editor slot
 
 ## What does not work
 
 - entities, chest contents, signs, and other block entities
 - modded blocks
-- Minecraft targets other than 26.3
+- Minecraft targets below 1.8.8
 - automatic tests against every Minecraft release
 
 ## Install
@@ -62,6 +64,17 @@ Turn a BG map zip into a 26.3 world.
 ```powershell
 bgconvert to-mc out\my-map.zip -o out\my-world --gamemode creative
 ```
+
+For other Minecraft targets, install Chunker once. It needs Java 17 or newer.
+
+```powershell
+bgconvert chunker install
+bgconvert to-mc out\my-map.zip -o out\my-world --mc-version 1.20.1
+```
+
+Run `bgconvert chunker status` if you want to see which jar and Java the tool
+will use. You can also pass `--chunker-jar` and `--java` to `to-mc`. Other
+problems are covered in [docs/troubleshooting.md](docs/troubleshooting.md).
 
 Install a BG package on a device that already has adb access.
 
