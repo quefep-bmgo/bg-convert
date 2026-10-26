@@ -62,6 +62,13 @@ STONE_SLABS = {
     "smooth_quartz": 7, "mossy_cobblestone": 3,
 }
 
+WOOL_SLABS = {
+    "white_wool": (44, 7),
+    "pink_wool": (205, 0),
+    "black_wool": (44, 6),
+    "light_gray_wool": (44, 0),
+}
+
 COLOR_FAMILIES = {
     "wool": 35, "carpet": 171, "stained_glass": 95, "stained_glass_pane": 160,
     "terracotta": 159, "concrete": 251, "concrete_powder": 252,
@@ -71,6 +78,7 @@ EXTRA_STAIRS = {
     "smooth_sandstone": 128, "smooth_red_sandstone": 180, "smooth_quartz": 156,
     "blackstone": 67, "polished_blackstone": 67, "mud_brick": 109, "mangrove": 136,
     "cherry": 163, "bamboo": 135, "bamboo_mosaic": 135,
+    "white_wool": 156, "pink_wool": 203, "black_wool": 114, "light_gray_wool": 156,
 }
 
 TALL_PLANTS = {
@@ -89,7 +97,9 @@ SIMPLE = {
     "deepslate_lapis_ore": (21, 0), "deepslate_copper_ore": (15, 0), "copper_ore": (15, 0),
     "stone": (1, 0), "granite": (1, 1), "polished_granite": (1, 2), "diorite": (1, 3),
     "polished_diorite": (1, 4), "andesite": (1, 5), "polished_andesite": (1, 6), "tuff": (1, 0),
-    "calcite": (1, 0), "dripstone_block": (1, 0), "smooth_stone": (1, 0),
+    "calcite": (155, 0), "dripstone_block": (1, 0), "smooth_stone": (1, 0),
+    "sulfur_bricks": (159, 4), "tuff_bricks": (98, 2),
+    "cracked_nether_bricks": (112, 0),
     "stone_bricks": (98, 0), "cracked_stone_bricks": (98, 2), "chiseled_stone_bricks": (98, 3),
     "mossy_stone_bricks": (98, 1), "infested_stone": (97, 0), "infested_cobblestone": (97, 1),
     "infested_stone_bricks": (97, 2), "infested_mossy_stone_bricks": (97, 3),
@@ -296,6 +306,15 @@ def _wood_block(block: str, properties: Mapping[str, str]) -> tuple[int, int] | 
             continue
         kind = base[len(wood) + 1:]
         index = WOODS[wood]
+        if wood == "cherry":
+            if kind == "planks":
+                return 159, 0
+            if kind in ("log", "wood"):
+                return 35, 6
+        if wood == "crimson" and kind in ("planks", "log", "wood", "stem", "hyphae"):
+            return 159, 2
+        if wood == "warped" and kind in ("planks", "log", "wood", "stem", "hyphae"):
+            return 159, 9
         if kind == "planks" and not stripped:
             return 5, index
         if kind == "sapling":
@@ -332,6 +351,8 @@ def _stone_slab(base: str, properties: Mapping[str, str]) -> tuple[int, int] | N
     if base == "stone":
         top = 8 if properties.get("type") == "top" else 0
         return (43, 0) if properties.get("type") == "double" else (44, top)
+    if base in WOOL_SLABS:
+        return WOOL_SLABS[base]
     if base not in STONE_SLABS:
         return None
     data = STONE_SLABS[base]
@@ -344,6 +365,8 @@ def _stone_slab(base: str, properties: Mapping[str, str]) -> tuple[int, int] | N
 
 
 def _generic_fallback(block: str) -> tuple[int, int] | None:
+    if block.startswith("dead_") and block.endswith("_coral_block"):
+        return 1, 0
     if "coral" in block:
         return (168, 0) if block.endswith("_block") else (0, 0)
     if block.startswith("potted_"):
