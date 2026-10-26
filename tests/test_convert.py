@@ -114,6 +114,7 @@ class BgToMcTests(unittest.TestCase):
             with open(out / "level.dat", "rb") as file:
                 world = bg2mc.read_nbt(gzip.decompress(file.read()))[1]
             self.assertEqual(world["Data"]["DataVersion"], 5023)
+            self.assertIsInstance(world["Data"]["spawn"]["pos"], bg2mc.IntArray)
 
 
 if __name__ == "__main__":
