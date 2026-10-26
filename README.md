@@ -10,6 +10,9 @@ Target versions from 1.8.8 to 26.3 work through Chunker. The map package layout
 is in [docs/map-layout.md](docs/map-layout.md) and the version notes are in
 [docs/version-support.md](docs/version-support.md).
 
+The full command list is in [docs/commands.md](docs/commands.md). The module
+layout is in [docs/architecture.md](docs/architecture.md).
+
 ## What works
 
 - `.mcr` and `.mca` worlds
@@ -93,3 +96,6 @@ pip install -e ".[dev]"
 python -m pytest
 ruff check .
 ```
+
+See [CONTRIBUTING.md](CONTRIBUTING.md) before opening a pull request. The same
+checks run in GitHub Actions on Linux and Windows.
