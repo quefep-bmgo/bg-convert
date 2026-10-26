@@ -728,7 +728,7 @@ def update_level_dat(out_dir, name, spawn, gamemode, difficulty):
     ds["hardcore"] = Byte(0)
     ds["locked"] = Byte(0)
     data["spawn"] = Compound({
-        "pos": List(3, [Int(int(spawn[0])), Int(int(spawn[1])), Int(int(spawn[2]))]),
+        "pos": IntArray([Int(int(spawn[0])), Int(int(spawn[1])), Int(int(spawn[2]))]),
         "pitch": Float(0.0),
         "yaw": Float(0.0),
         "dimension": String("minecraft:overworld"),

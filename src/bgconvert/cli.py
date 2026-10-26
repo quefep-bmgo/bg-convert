@@ -1,10 +1,12 @@
 """Command line tools for moving worlds between Minecraft and Blockman GO."""
 
 import argparse
+import shutil
 import sys
+import tempfile
 from pathlib import Path
 
-from . import __version__, bg2mc, convert, decode, install, package, region
+from . import __version__, bg2mc, chunker, convert, decode, install, package, region
 
 DEFAULT_TARGET = (convert.TARGET_SPAWN_X, convert.TARGET_SPAWN_Z)
 
@@ -51,6 +53,7 @@ def build_parser() -> argparse.ArgumentParser:
     add_convert(commands)
     add_package(commands)
     add_to_mc(commands)
+    add_chunker(commands)
     add_install(commands)
     return parser
 
@@ -90,14 +93,27 @@ def add_to_mc(commands) -> None:
     parser.add_argument("input", type=Path, help="BG map zip or a folder of r.*.mca files")
     parser.add_argument("-o", "--output", type=Path)
     parser.add_argument("--name")
+    parser.add_argument("--mc-version", default="26.3", help="target version, 1.8.8 to 26.3")
     parser.add_argument("--gamemode", choices=["survival", "creative", "adventure", "spectator"])
     parser.add_argument("--difficulty", choices=["peaceful", "easy", "normal", "hard"])
     parser.add_argument("--spawn", type=int, nargs=3, metavar=("X", "Y", "Z"))
     parser.add_argument("--offset-x", type=int, default=0)
     parser.add_argument("--offset-z", type=int, default=0)
     parser.add_argument("--no-empty-chunks", action="store_true")
+    parser.add_argument("--chunker-jar", type=Path, help="Chunker CLI jar for targets below 26.3")
+    parser.add_argument("--java", default="java", help="java executable for Chunker")
     parser.add_argument("--force", action="store_true")
     parser.set_defaults(run=_to_mc)
+
+
+def add_chunker(commands) -> None:
+    parser = commands.add_parser("chunker", help="manage the Chunker jar used for target versions")
+    sub = parser.add_subparsers(dest="chunker_command", required=True)
+    install = sub.add_parser("install", help="download the pinned Chunker jar")
+    install.add_argument("--dest", type=Path)
+    install.set_defaults(run=_chunker_install)
+    status = sub.add_parser("status", help="show the Chunker and Java status")
+    status.set_defaults(run=_chunker_status)
 
 
 def add_install(commands) -> None:
@@ -174,10 +190,10 @@ def _package(args: argparse.Namespace) -> int:
     return 0
 
 
-def _to_mc(args: argparse.Namespace) -> int:
+def _bg2mc_args(args: argparse.Namespace, output: Path | None) -> list[str]:
     argv = [str(args.input)]
-    if args.output:
-        argv += ["-o", str(args.output)]
+    if output:
+        argv += ["-o", str(output)]
     if args.name:
         argv += ["--name", args.name]
     if args.gamemode:
@@ -194,7 +210,82 @@ def _to_mc(args: argparse.Namespace) -> int:
         argv.append("--no-empty-chunks")
     if args.force:
         argv.append("--force")
-    return bg2mc.main(argv)
+    return argv
+
+
+def _to_mc(args: argparse.Namespace) -> int:
+    target = args.mc_version
+    if target not in chunker.SUPPORTED_VERSIONS:
+        supported = f"{chunker.SUPPORTED_VERSIONS[0]} to {chunker.SUPPORTED_VERSIONS[-1]}"
+        print(f"unsupported Minecraft target: {target}", file=sys.stderr)
+        print(f"supported targets: {supported}", file=sys.stderr)
+        return 2
+
+    if target == "26.3":
+        return bg2mc.main(_bg2mc_args(args, args.output))
+
+    output = args.output
+    if output is None:
+        stem = Path(args.input).stem
+        output = Path(args.input).parent / f"{stem}_{target}"
+    output = Path(output)
+
+    if output.exists():
+        if not args.force:
+            print(f"output exists: {output}", file=sys.stderr)
+            return 2
+        if output.is_dir():
+            shutil.rmtree(output)
+        else:
+            output.unlink()
+
+    with tempfile.TemporaryDirectory(prefix="bgconvert-") as tmp:
+        base = Path(tmp) / "base"
+        name = args.name or output.stem
+        result = bg2mc.main(_bg2mc_args(args, base) + ["--name", name])
+        if result != 0:
+            return result
+
+        zip_output = output.suffix.lower() == ".zip"
+        final = Path(tmp) / "final" if zip_output else output
+        try:
+            chunker.run(base, final, target, args.chunker_jar, args.java)
+        except chunker.ChunkerError as exc:
+            print(str(exc), file=sys.stderr)
+            return 2
+
+        if zip_output:
+            bg2mc.zip_world(str(final), str(output))
+
+    print(f"world: {output}")
+    return 0
+
+
+def _chunker_install(args: argparse.Namespace) -> int:
+    try:
+        path = chunker.install(args.dest)
+    except (chunker.ChunkerError, OSError) as exc:
+        print(str(exc), file=sys.stderr)
+        return 2
+    print(f"chunker: {path}")
+    return 0
+
+
+def _chunker_status(_args: argparse.Namespace) -> int:
+    print(f"chunker version: {chunker.CHUNKER_VERSION}")
+    print(f"supported versions: {chunker.SUPPORTED_VERSIONS[0]} to {chunker.SUPPORTED_VERSIONS[-1]}")
+    print(f"cache: {chunker.default_cache_dir()}")
+    try:
+        print(f"java: {chunker.java_version()}")
+    except chunker.ChunkerError as exc:
+        print(f"java: {exc}")
+    try:
+        path = chunker.resolve_jar()
+        print(f"jar: {path}")
+        print(f"sha256: {chunker.sha256(path)}")
+    except chunker.ChunkerError:
+        print("jar: not installed")
+    return 0
 
 
 def _install(args: argparse.Namespace) -> int:
