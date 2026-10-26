@@ -1,9 +1,10 @@
+import gzip
 import tempfile
 import unittest
 import zipfile
 from pathlib import Path
 
-from bgconvert import convert, nbt, package, region
+from bgconvert import bg2mc, convert, nbt, package, region
 from bgconvert.cli import _resolve_world, world_spawn
 
 
@@ -91,6 +92,28 @@ class ConvertTests(unittest.TestCase):
     def test_reads_the_new_spawn_tag(self) -> None:
         self.assertEqual(world_spawn({"spawn": {"pos": [10, 64, 20]}}), (10, 64, 20))
         self.assertEqual(world_spawn({"SpawnX": 1, "SpawnY": 2, "SpawnZ": 3}), (1, 2, 3))
+
+
+class BgToMcTests(unittest.TestCase):
+    def test_bg_zip_becomes_a_world(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            regions = root / "regions"
+            regions.mkdir()
+            region.write_region(regions / "r.0.0.mca", {(0, 0): make_chunk(0, 0)})
+            map_zip = root / "map.zip"
+            with zipfile.ZipFile(map_zip, "w") as archive:
+                archive.write(regions / "r.0.0.mca", "r.0.0.mca")
+
+            out = root / "world"
+            result = bg2mc.main([str(map_zip), "-o", str(out), "--no-empty-chunks", "--force"])
+            self.assertEqual(result, 0)
+            self.assertTrue((out / "level.dat").exists())
+            self.assertTrue((out / "dimensions/minecraft/overworld/region/r.0.0.mca").exists())
+
+            with open(out / "level.dat", "rb") as file:
+                world = bg2mc.read_nbt(gzip.decompress(file.read()))[1]
+            self.assertEqual(world["Data"]["DataVersion"], 5023)
 
 
 if __name__ == "__main__":

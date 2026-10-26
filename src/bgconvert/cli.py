@@ -4,7 +4,7 @@ import argparse
 import sys
 from pathlib import Path
 
-from . import __version__, convert, decode, install, package, region
+from . import __version__, bg2mc, convert, decode, install, package, region
 
 DEFAULT_TARGET = (convert.TARGET_SPAWN_X, convert.TARGET_SPAWN_Z)
 
@@ -50,6 +50,7 @@ def build_parser() -> argparse.ArgumentParser:
     add_inspect(commands)
     add_convert(commands)
     add_package(commands)
+    add_to_mc(commands)
     add_install(commands)
     return parser
 
@@ -82,6 +83,21 @@ def add_package(commands) -> None:
     parser.add_argument("--init", type=int, nargs=3, default=[0, 0, 0], metavar=("X", "Y", "Z"))
     parser.add_argument("--birth", type=float, nargs=3, default=[0.0, 0.0, 0.0], metavar=("X", "Y", "Z"))
     parser.set_defaults(run=_package)
+
+
+def add_to_mc(commands) -> None:
+    parser = commands.add_parser("to-mc", help="convert a BG map into a Minecraft 26.3 world")
+    parser.add_argument("input", type=Path, help="BG map zip or a folder of r.*.mca files")
+    parser.add_argument("-o", "--output", type=Path)
+    parser.add_argument("--name")
+    parser.add_argument("--gamemode", choices=["survival", "creative", "adventure", "spectator"])
+    parser.add_argument("--difficulty", choices=["peaceful", "easy", "normal", "hard"])
+    parser.add_argument("--spawn", type=int, nargs=3, metavar=("X", "Y", "Z"))
+    parser.add_argument("--offset-x", type=int, default=0)
+    parser.add_argument("--offset-z", type=int, default=0)
+    parser.add_argument("--no-empty-chunks", action="store_true")
+    parser.add_argument("--force", action="store_true")
+    parser.set_defaults(run=_to_mc)
 
 
 def add_install(commands) -> None:
@@ -156,6 +172,29 @@ def _package(args: argparse.Namespace) -> int:
     print(f"package: {args.out} ({files} files)")
     print(f"zip: {zip_path}")
     return 0
+
+
+def _to_mc(args: argparse.Namespace) -> int:
+    argv = [str(args.input)]
+    if args.output:
+        argv += ["-o", str(args.output)]
+    if args.name:
+        argv += ["--name", args.name]
+    if args.gamemode:
+        argv += ["--gamemode", args.gamemode]
+    if args.difficulty:
+        argv += ["--difficulty", args.difficulty]
+    if args.spawn:
+        argv += ["--spawn", *(str(value) for value in args.spawn)]
+    if args.offset_x:
+        argv += ["--offset-x", str(args.offset_x)]
+    if args.offset_z:
+        argv += ["--offset-z", str(args.offset_z)]
+    if args.no_empty_chunks:
+        argv.append("--no-empty-chunks")
+    if args.force:
+        argv.append("--force")
+    return bg2mc.main(argv)
 
 
 def _install(args: argparse.Namespace) -> int:
