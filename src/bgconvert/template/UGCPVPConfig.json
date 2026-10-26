@@ -1,0 +1,42 @@
+{
+  "winCondition": {
+    "param": [
+      60
+    ],
+    "type": 2
+  },
+  "teamSetting": {
+    "teamColorList": [
+      "8F2521",
+      "476AC3"
+    ],
+    "teamCount": 2,
+    "teamSize": 10,
+    "randomSpawn": true,
+    "birthPositions": [
+      {
+        "x": 580.5,
+        "y": 8,
+        "z": 485.5
+      },
+      {
+        "x": 580.5,
+        "y": 8,
+        "z": 446.5
+      }
+    ]
+  },
+  "otherSetting": {
+    "breakBlock": false,
+    "dieDrop": true,
+    "placeBlock": false,
+    "breakMap": false
+  },
+  "gameSetting": {
+    "allowJoinAfterStart": true,
+    "startPlayers": 4,
+    "waitingPlayerTime": 10,
+    "RespawnTime": 6,
+    "gameTime": 15
+  }
+}
