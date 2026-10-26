@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "bg-convert"
-version = "0.1.0"
+version = "0.2.0"
 description = "Convert between Blockman GO maps and Minecraft Java worlds."
 readme = "README.md"
 requires-python = ">=3.10"
@@ -28,6 +28,7 @@ bgconvert = "bgconvert.cli:main"
 
 [project.urls]
 Homepage = "https://github.com/quefep-bmgo/bg-convert"
+Issues = "https://github.com/quefep-bmgo/bg-convert/issues"
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/bgconvert"]
