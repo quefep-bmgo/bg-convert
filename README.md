@@ -1,12 +1,12 @@
 # bg-convert
 
-Convert Minecraft Java worlds into Blockman GO map packages.
+Convert between Minecraft Java worlds and Blockman GO maps.
 
-This is the first working half of the project. It reads a Minecraft world, maps the
-blocks to the legacy IDs Blockman GO uses, writes BG region files, and builds the
-folder, checksum file, and zip that the game loads.
+The tool reads a Minecraft world, maps the blocks to the legacy IDs Blockman GO
+uses, writes BG region files, and builds the folder, checksum file, and zip that
+the game loads. It also reads a BG map and writes a Minecraft Java 26.3 world.
 
-Blockman GO to Minecraft is not in this branch yet. The version plan is in issue #1.
+Other Minecraft target versions are not ready yet. The plan is in issue #3.
 The map package layout is in [docs/map-layout.md](docs/map-layout.md).
 
 ## What works
@@ -15,13 +15,14 @@ The map package layout is in [docs/map-layout.md](docs/map-layout.md).
 - Beta, 1.2 to 1.12, 1.13 to 1.17, and 1.18 and newer chunk layouts
 - horizontal and vertical region shifts
 - BG package creation, checksums, and zip output
+- BG to Minecraft 26.3
 - adb install into an editor slot
 
 ## What does not work
 
 - entities, chest contents, signs, and other block entities
 - modded blocks
-- Blockman GO to Minecraft
+- Minecraft targets other than 26.3
 - automatic tests against every Minecraft release
 
 ## Install
@@ -56,7 +57,13 @@ Build the map package and the zip.
 bgconvert package out\regions out\my-map --init 579 8 466
 ```
 
-Install it on a device that already has adb access.
+Turn a BG map zip into a 26.3 world.
+
+```powershell
+bgconvert to-mc out\my-map.zip -o out\my-world --gamemode creative
+```
+
+Install a BG package on a device that already has adb access.
 
 ```powershell
 bgconvert install out\my-map --zip out\my-map.zip --slot offi-edit-102 --id YOUR_MAP_ID
